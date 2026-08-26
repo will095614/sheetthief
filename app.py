@@ -105,9 +105,13 @@ def api_upload():
     if not f or not f.filename:
         return jsonify({"error": "沒有收到影片檔案"}), 400
 
+    ext = os.path.splitext(f.filename)[1].lower()
+    allowed_exts = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv", ".ts"}
+    if ext not in allowed_exts:
+        return jsonify({"error": f"不支援的檔案格式，請上傳影片檔案"}), 400
+
     job_id = uuid.uuid4().hex[:12]
     d = job_dir(job_id)
-    ext = os.path.splitext(f.filename)[1] or ".mp4"
     video_path = os.path.join(d, "source" + ext)
     f.save(video_path)
 

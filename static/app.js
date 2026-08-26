@@ -218,10 +218,22 @@
   });
   el.dropzone.addEventListener("drop", function (e) {
     var files = e.dataTransfer.files;
-    if (files && files.length) uploadFile(files[0]);
+    if (files && files.length) {
+      if (files[0].type && !files[0].type.startsWith("video/")) {
+        showError("請上傳影片檔案 (例如 .mp4, .mov)，不支援此格式：" + files[0].name);
+        return;
+      }
+      uploadFile(files[0]);
+    }
   });
   el.fileInput.addEventListener("change", function () {
-    if (el.fileInput.files.length) uploadFile(el.fileInput.files[0]);
+    if (el.fileInput.files.length) {
+      if (el.fileInput.files[0].type && !el.fileInput.files[0].type.startsWith("video/")) {
+        showError("請上傳影片檔案 (例如 .mp4, .mov)，不支援此格式：" + el.fileInput.files[0].name);
+        return;
+      }
+      uploadFile(el.fileInput.files[0]);
+    }
   });
 
   function uploadFile(file) {
