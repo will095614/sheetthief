@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+.env
+jobs/
+*.pdf
+*.mp4
+*.mkv
+*.avi
+*.jpg
+*.jpeg
+*.png
+.deps_installed

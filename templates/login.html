@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>鋼琴五線譜自動擷取工具 - 登入</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="wrap" style="max-width:420px; margin-top:80px;">
+    <h1>🎹 鋼琴五線譜自動擷取工具</h1>
+    <div class="card">
+      <h2>請輸入存取碼</h2>
+      <form method="post">
+        <input type="password" name="code" placeholder="存取碼" autofocus
+               style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:15px; margin-bottom:14px;">
+        <button type="submit" class="primary">進入</button>
+      </form>
+      {% if error %}
+      <p class="hint" style="color:#9c2c26; margin-top:12px;">{{ error }}</p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
