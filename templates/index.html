@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>鋼琴五線譜手動擷取工具</title>
+<title>鋼琴五線譜擷取工具</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="wrap">
-    <h1>🎹 鋼琴五線譜手動擷取工具</h1>
-    <p class="sub">上傳教學影片，手動拉動時間軸擷取需要的樂譜片段，拼成完整樂譜 PDF。</p>
+    <h1>🎹 鋼琴五線譜擷取工具</h1>
+    <p class="sub">上傳教學影片，自動找出影片中出現的每一頁譜面，確認後拼成完整樂譜 PDF。</p>
 
     <!-- Step 1: 上傳 -->
     <section id="step-upload" class="card">
@@ -35,37 +35,83 @@
       </div>
 
       <div id="uploadStatus" class="hint"></div>
+      <div id="uploadProgressWrap" class="progress-outer hidden" style="margin-top: 10px;">
+        <div id="uploadProgress" class="progress-inner"></div>
+      </div>
     </section>
 
-    <!-- Step 2: 框選與擷取 -->
+    <!-- Step 2: 自動掃描 / 手動擷取 -->
     <section id="step-crop" class="card hidden">
-      <h2>2. 手動擷取樂譜片段</h2>
-      <p class="hint">請拖曳下方時間軸找到樂譜畫面，並調整綠色框選範圍，確認後點擊「擷取當前畫面」。可以重複此動作擷取多張片段。</p>
+      <h2>2. 找出樂譜片段</h2>
+
+      <div class="scan-panel">
+        <div class="scan-head">
+          <strong>🤖 自動掃描整部影片</strong>
+          <span class="hint">自動找出所有譜面畫面，並去掉重複停留的頁面</span>
+        </div>
+        <div class="scan-controls">
+          <label class="inline-field">檢查間隔
+            <select id="intervalInput">
+              <option value="1">每 1 秒</option>
+              <option value="2" selected>每 2 秒</option>
+              <option value="3">每 3 秒</option>
+              <option value="5">每 5 秒</option>
+            </select>
+          </label>
+          <label class="inline-field">去重複敏感度
+            <input type="range" id="sensitivityInput" min="0" max="100" step="5" value="50">
+            <span id="sensitivityLabel" class="mono">50</span>
+          </label>
+          <button type="button" id="autoScanBtn" class="primary">開始自動掃描</button>
+          <button type="button" id="autoScanStopBtn" class="secondary hidden">停止</button>
+        </div>
+        <div id="scanProgressWrap" class="progress-outer hidden" style="margin-top: 10px;">
+          <div id="scanProgress" class="progress-inner"></div>
+        </div>
+        <div id="scanStatus" class="hint"></div>
+        <p class="hint tiny">掃描會取代上一次自動掃描的結果，並依影片時間排序；手動擷取的片段不受影響。影片越長、間隔越小，處理時間越久。</p>
+      </div>
+
+      <h3 class="section-title">或是手動挑選畫面</h3>
+      <p class="hint">拖曳時間軸找到樂譜畫面，調整框選範圍，再按「擷取當前畫面」。可重複擷取多張。</p>
+
       <div id="cropStage" class="crop-stage">
-        <img id="previewImg" src="" alt="preview">
-        <div id="cropBox" class="crop-box">
-          <div class="handle nw"></div><div class="handle ne"></div>
-          <div class="handle sw"></div><div class="handle se"></div>
+        <img id="previewImg" src="" alt="preview" class="hidden">
+        <div id="previewLoading" class="stage-loading">讀取畫面中...</div>
+        <div id="cropBox" class="crop-box hidden">
+          <div class="handle nw" data-handle="nw"></div><div class="handle ne" data-handle="ne"></div>
+          <div class="handle sw" data-handle="sw"></div><div class="handle se" data-handle="se"></div>
         </div>
       </div>
+
+      <div id="detectBadge" class="detect-badge hidden"></div>
+
       <div class="row">
-        <label>影片時間點：</label>
+        <label for="previewSeek">影片時間點：</label>
         <input type="range" id="previewSeek" min="0" max="100" value="0" step="0.1">
-        <span id="previewSeekLabel">0.0 秒</span>
+        <span id="previewSeekLabel" class="mono">0.0 秒</span>
       </div>
-      <div class="row" style="justify-content: center; gap: 12px; margin-top: 8px;">
-        <button type="button" id="btnSeekM1" class="tab-btn">-1 秒</button>
-        <button type="button" id="btnSeekM05" class="tab-btn">-0.5 秒</button>
-        <button type="button" id="btnSeekP05" class="tab-btn">+0.5 秒</button>
-        <button type="button" id="btnSeekP1" class="tab-btn">+1 秒</button>
+      <div class="row center" style="gap: 8px; margin-top: 8px;">
+        <button type="button" id="btnSeekM5" class="secondary small">-5 秒</button>
+        <button type="button" id="btnSeekM1" class="secondary small">-1 秒</button>
+        <button type="button" id="btnSeekM05" class="secondary small">-0.5 秒</button>
+        <button type="button" id="btnSeekP05" class="secondary small">+0.5 秒</button>
+        <button type="button" id="btnSeekP1" class="secondary small">+1 秒</button>
+        <button type="button" id="btnSeekP5" class="secondary small">+5 秒</button>
       </div>
-      <div class="row" style="justify-content: center; margin-top: 16px;">
-        <button id="captureBtn" class="primary" style="font-size: 16px;">📸 擷取當前畫面</button>
+      <div class="row center" style="margin-top: 14px;">
+        <button id="captureBtn" class="primary big">📸 擷取當前畫面</button>
       </div>
+      <p id="captureStatus" class="hint tiny center"></p>
+      <p class="hint tiny center">鍵盤：← / → 前後 1 秒，Shift + ← / → 前後 5 秒，C 鍵擷取</p>
 
       <!-- Gallery -->
       <div id="galleryWrap" class="hidden" style="margin-top: 24px;">
-        <h3>已擷取的片段 (<span id="galleryCount">0</span>)</h3>
+        <div class="gallery-head">
+          <h3>已擷取的片段 (<span id="galleryCount">0</span>)</h3>
+          <button type="button" id="clearAllBtn" class="danger small">清空全部</button>
+        </div>
+        <p class="hint tiny">由上到下的順序就是 PDF 的頁面順序，可用 ↑ ↓ 調整。</p>
         <div id="gallery" class="gallery"></div>
       </div>
     </section>
@@ -75,10 +121,10 @@
       <h2>3. 輸出設定與產生 PDF</h2>
       <div class="grid">
         <label>樂譜標題
-          <input type="text" id="titleInput" value="鋼琴五線譜">
+          <input type="text" id="titleInput" value="鋼琴五線譜" maxlength="120">
         </label>
         <label>副標題（選填）
-          <input type="text" id="subtitleInput" value="" placeholder="例如：cover○○・改編：○○">
+          <input type="text" id="subtitleInput" value="" maxlength="200" placeholder="例如：cover○○・改編：○○">
         </label>
         <label>紙張大小
           <select id="pageSizeInput">
@@ -88,19 +134,20 @@
         </label>
       </div>
 
-      <div class="row" style="margin-bottom: 8px;">
+      <div class="row" style="margin-bottom: 8px; flex-wrap: wrap;">
         <label class="checkbox-label">
           <input type="checkbox" id="enhanceInput" checked>
           啟用智慧畫質增強 (自動調整對比、柔和銳化，讓樂譜更清晰且保留細節)
         </label>
-        <button type="button" id="enhancePreviewBtn">👀 預覽增強效果</button>
+        <button type="button" id="enhancePreviewBtn" class="secondary">👀 預覽增強效果</button>
       </div>
       <div id="enhancePreviewWrap" class="hidden" style="margin-bottom: 24px;">
         <p class="hint">這是目前框選區域套用智慧增強後的樣子：</p>
-        <img id="enhancePreviewImg" src="" alt="增強預覽" style="max-width:100%;border:1px solid var(--border);border-radius:6px;">
+        <img id="enhancePreviewImg" src="" alt="增強預覽" class="enhance-preview">
       </div>
 
-      <button id="startBtn" class="primary">🚀 產生樂譜 PDF</button>
+      <button id="startBtn" class="primary big">🚀 產生樂譜 PDF</button>
+      <span id="startHint" class="hint"></span>
     </section>
 
     <!-- Step 4: 進度 -->
@@ -114,8 +161,8 @@
     <section id="step-result" class="card hidden">
       <h2>✅ 完成！</h2>
       <p id="resultSummary"></p>
-      <a id="downloadBtn" class="primary" href="#" download>⬇️ 下載樂譜 PDF</a>
-      <button id="restartBtn">重新開始</button>
+      <a id="downloadBtn" class="primary big" href="#" download>⬇️ 下載樂譜 PDF</a>
+      <button id="restartBtn" class="secondary">重新開始</button>
     </section>
 
     <div id="errorBox" class="error hidden"></div>

@@ -11,3 +11,4 @@ jobs/
 *.jpeg
 *.png
 .deps_installed
+_work/
